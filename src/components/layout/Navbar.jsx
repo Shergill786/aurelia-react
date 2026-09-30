@@ -1,11 +1,13 @@
+
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { useAuth, useShop, useTheme } from '../../context/contexts';
+import { useAuth } from '../../context/AuthContext';
+import { useShop, useTheme } from '../../context/contexts';
 import { useKeyDown, useLockBodyScroll } from '../../hooks/useEvents';
 import { useScroll } from '../../hooks/useScroll';
 import SearchBox from './SearchBox';
 
-/** Main links — one array feeds both the desktop nav and the mobile drawer. */
+/** Main links */
 const NAV_LINKS = [
   { to: '/home', label: 'Home' },
   { to: '/shop', label: 'Shop' },
@@ -19,10 +21,15 @@ const DRAWER_EXTRA = [
   { to: '/cart', label: 'Cart' },
 ];
 
-/** Logo — reused in the navbar and footer. */
+/** Logo */
 export function Logo({ style }) {
   return (
-    <Link to="/home" className="logo" style={style} aria-label="Aurelia home">
+    <Link
+      to="/home"
+      className="logo"
+      style={style}
+      aria-label="Aurelia home"
+    >
       AUR<span>ELIA</span>
     </Link>
   );
@@ -31,6 +38,7 @@ export function Logo({ style }) {
 function ThemeToggle() {
   const { theme, toggleTheme } = useTheme();
   const dark = theme === 'dark';
+
   return (
     <button
       type="button"
@@ -45,11 +53,21 @@ function ThemeToggle() {
   );
 }
 
-/** Icon link with a live count badge (cart / wishlist). */
+/** Icon link with a live count badge */
 function IconLink({ to, icon, label, count }) {
   return (
-    <Link to={to} className="nav-icon" title={label} aria-label={count !== undefined ? `${label} (${count} items)` : label}>
+    <Link
+      to={to}
+      className="nav-icon"
+      title={label}
+      aria-label={
+        count !== undefined
+          ? `${label} (${count} items)`
+          : label
+      }
+    >
       <span aria-hidden="true">{icon}</span>
+
       {count !== undefined && (
         <span className="badge" aria-hidden="true">
           {count}
@@ -62,15 +80,41 @@ function IconLink({ to, icon, label, count }) {
 function MobileDrawer({ open, onClose, accountLabel }) {
   useKeyDown('Escape', onClose, open);
   useLockBodyScroll(open);
+
   return (
     <>
-      <div className={`drawer-overlay ${open ? 'show' : ''}`} onClick={onClose} aria-hidden="true" />
-      <nav id="navDrawer" className={`nav-drawer ${open ? 'open' : ''}`} aria-label="Mobile" aria-hidden={!open} inert={open ? undefined : true}>
-        <button type="button" className="nav-drawer-close" onClick={onClose} aria-label="Close menu">
+      <div
+        className={`drawer-overlay ${open ? 'show' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <nav
+        id="navDrawer"
+        className={`nav-drawer ${open ? 'open' : ''}`}
+        aria-label="Mobile"
+        aria-hidden={!open}
+        inert={open ? undefined : true}
+      >
+        <button
+          type="button"
+          className="nav-drawer-close"
+          onClick={onClose}
+          aria-label="Close menu"
+        >
           ✕
         </button>
-        {[...NAV_LINKS, ...DRAWER_EXTRA, { to: '/login', label: accountLabel }].map((link) => (
-          <NavLink key={link.to} to={link.to} end={link.to === '/home'} onClick={onClose}>
+
+        {[...NAV_LINKS, ...DRAWER_EXTRA, {
+          to: '/login',
+          label: accountLabel,
+        }].map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            end={link.to === '/home'}
+            onClick={onClose}
+          >
             {link.label}
           </NavLink>
         ))}
@@ -79,10 +123,7 @@ function MobileDrawer({ open, onClose, accountLabel }) {
   );
 }
 
-/**
- * Navbar — sticky site header: logo, links, search, theme switch, badges.
- * Reads cart/wishlist counts from ShopContext, so badges update instantly.
- */
+/** Navbar */
 export default function Navbar() {
   const { cartCount, wishlist } = useShop();
   const { user } = useAuth();
@@ -97,7 +138,11 @@ export default function Navbar() {
 
           <nav className="nav-links" aria-label="Main">
             {NAV_LINKS.map((link) => (
-              <NavLink key={link.to} to={link.to} end={link.to === '/home'}>
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.to === '/home'}
+              >
                 {link.label}
               </NavLink>
             ))}
@@ -107,10 +152,35 @@ export default function Navbar() {
 
           <div className="nav-icons">
             <ThemeToggle />
-            <IconLink to="/wishlist" icon="♡" label="Wishlist" count={wishlist.length} />
-            <IconLink to="/cart" icon="🛍" label="Cart" count={cartCount} />
-            {/* Signed in: show the shopper's initial; the /login page then offers Sign Out */}
-            <IconLink to="/login" icon={user ? <span className="nav-avatar">{user.name.charAt(0)}</span> : '☺'} label={user ? `Account — signed in as ${user.name}` : 'Sign in'} />
+
+            <IconLink
+              to="/wishlist"
+              icon="♡"
+              label="Wishlist"
+              count={wishlist.length}
+            />
+
+            <IconLink
+              to="/cart"
+              icon="🛍"
+              label="Cart"
+              count={cartCount}
+            />
+
+            <IconLink
+              to="/login"
+              icon={
+                user
+                  ? <span className="nav-avatar">{user.name.charAt(0)}</span>
+                  : '☺'
+              }
+              label={
+                user
+                  ? `Account — signed in as ${user.name}`
+                  : 'Sign in'
+              }
+            />
+
             <button
               type="button"
               className="hamburger"
@@ -124,7 +194,12 @@ export default function Navbar() {
           </div>
         </div>
       </header>
-      <MobileDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} accountLabel={user ? `Account (${user.name})` : 'Login'} />
+
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        accountLabel={user ? `Account (${user.name})` : 'Login'}
+      />
     </>
   );
 }
