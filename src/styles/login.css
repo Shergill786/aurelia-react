@@ -1,0 +1,19 @@
+/* =========================================================
+   Login / Signup extra effects
+   (Core glass card styling lives in cart.css under Auth pages
+   so both auth screens share one visual system.)
+   ========================================================= */
+
+.auth-logo{ text-align:center; margin-bottom:26px; }
+.auth-logo span{
+  font-family:var(--font-display); font-size:1.6rem; letter-spacing:2px; color:#fff;
+}
+.auth-logo em{ font-style:normal; background:var(--grad-gold); -webkit-background-clip:text; background-clip:text; color:transparent; }
+
+.strength-meter{ height:4px; border-radius:2px; background:rgba(255,255,255,.15); margin-top:8px; overflow:hidden; }
+.strength-meter i{ display:block; height:100%; width:0%; transition:width .3s ease, background .3s ease; }
+
+.floating-orb{
+  position:absolute; border-radius:50%; filter:blur(60px); opacity:.5; animation:orbFloat 8s ease-in-out infinite;
+}
+@keyframes orbFloat{ 0%,100%{ transform:translateY(0); } 50%{ transform:translateY(-30px); } }
