@@ -73,6 +73,42 @@ async function createUsersTable() {
 
 
 // ===============================
+// CREATE CART ITEMS TABLE
+// The cart routes below rely on this table and on the
+// UNIQUE (user_id, cart_key) index for "ON DUPLICATE KEY UPDATE".
+// IF NOT EXISTS: an existing table is left untouched.
+// ===============================
+
+async function createCartItemsTable() {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS cart_items (
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT NOT NULL,
+        product_id INT NOT NULL,
+        product_name VARCHAR(255) NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        image_url TEXT,
+        quantity INT NOT NULL DEFAULT 1,
+        cart_key VARCHAR(255) NOT NULL,
+        options_json TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY unique_user_cart_line (user_id, cart_key),
+        KEY idx_cart_user (user_id)
+      )
+    `);
+
+    console.log("Cart items table ready");
+  } finally {
+    connection.release();
+  }
+}
+
+
+// ===============================
 // TEST DATABASE
 // ===============================
 
@@ -794,20 +830,27 @@ app.delete(
 // GET USERS
 // ===============================
 
+// Requires a valid token and returns ONLY the signed-in user.
+// (Previously this listed every user's name and email to anyone.)
 app.get(
   "/api/users",
+  authenticateToken,
   async (req, res) => {
     try {
       const [users] =
-        await pool.query(`
+        await pool.query(
+          `
           SELECT
             id,
             name,
             email,
             created_at
           FROM users
-          ORDER BY created_at DESC
-        `);
+          WHERE id = ?
+          LIMIT 1
+          `,
+          [Number(req.user.id)]
+        );
 
       res.json({
         success: true,
@@ -846,6 +889,7 @@ app.listen(
 
     try {
       await createUsersTable();
+      await createCartItemsTable();
 
       await pool.query(
         "SELECT 1"

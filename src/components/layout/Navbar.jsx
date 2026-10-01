@@ -1,8 +1,7 @@
 
 import { useState } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useShop, useTheme } from '../../context/contexts';
+import { useAuth, useShop, useTheme } from '../../context/contexts';
 import { useKeyDown, useLockBodyScroll } from '../../hooks/useEvents';
 import { useScroll } from '../../hooks/useScroll';
 import SearchBox from './SearchBox';

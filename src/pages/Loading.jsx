@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/contexts';
 import { PRELOAD_IMAGES } from '../data/siteImages';
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 

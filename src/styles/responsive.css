@@ -49,10 +49,10 @@
 
 /* Mobile nav drawer */
 .nav-drawer{
-  position:fixed; top:0; right:-300px; width:280px; height:100vh; background:var(--surface);
-  z-index:2000; box-shadow:var(--shadow-hard); transition:right .35s ease; padding:30px 24px; overflow-y:auto;
+  position:fixed; top:0; right:0; width:280px; height:100vh; background:var(--surface);
+  z-index:2000; box-shadow:var(--shadow-hard); transform:translateX(100%); transition:transform .35s ease; padding:30px 24px; overflow-y:auto;
 }
-.nav-drawer.open{ right:0; }
+.nav-drawer.open{ transform:translateX(0); }
 .nav-drawer a{ display:block; padding:14px 0; border-bottom:1px solid var(--border); font-weight:500; }
 .nav-drawer-close{ font-size:1.6rem; margin-bottom:20px; display:block; }
 .drawer-overlay{
@@ -99,4 +99,89 @@
   .cart-item img{ width:70px; height:70px; }
   .pd-tabs{ gap:22px; overflow-x:auto; scrollbar-width:none; }
   .pd-tab{ white-space:nowrap; flex-shrink:0; }
+}
+
+@media (max-width:820px){
+  :root{ --nav-h:64px; }
+  .navbar{ height:var(--nav-h); }
+  .nav-inner{ gap:14px; }
+  .logo{ flex-shrink:0; }
+  .nav-icons{ gap:14px; margin-left:auto; }
+  .theme-toggle{ flex-shrink:0; }
+  .shop-layout,
+  .pd-layout,
+  .cart-layout,
+  .checkout-layout{ min-width:0; }
+  .filter-panel{ padding:20px; }
+  .shop-toolbar{ align-items:stretch; }
+  .shop-toolbar > p,
+  .shop-toolbar > select{ width:100%; }
+  .sort-select{ width:100%; }
+  .modal-box{ width:calc(100% - 28px); max-height:calc(100vh - 28px); }
+  .modal-info{ padding:24px; }
+  .newsletter-block{ padding:42px 24px; }
+  .newsletter-block form{ width:100%; }
+  .newsletter-block input{ min-width:0; }
+  .pd-title{ font-size:1.8rem; }
+  .pd-actions .btn{ min-width:0; }
+  .summary-box{ position:static; }
+  .order-card{ padding:20px; }
+}
+
+@media (max-width:600px){
+  .container{ padding-left:16px; padding-right:16px; }
+  .section{ padding:52px 0; }
+  .page-hero{ padding:54px 0 42px; }
+  .page-hero h1{ font-size:2.2rem; }
+  .hero{ min-height:calc(100svh - var(--nav-h)); }
+  .hero-inner{ gap:24px; }
+  .hero-visual{ height:290px; }
+  .hero-stats{ gap:20px; flex-wrap:wrap; margin-top:34px; }
+  .hero-stats div{ min-width:72px; }
+  .cat-grid{ gap:12px; }
+  .cat-card .overlay{ padding:12px; font-size:.82rem; }
+  .product-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+  .pc-body{ padding:12px; }
+  .pc-name{ font-size:.9rem; }
+  .pc-price{ font-size:1rem; }
+  .flash-sale{ padding:28px 16px; border-radius:var(--radius-m); }
+  .flash-head h2{ font-size:1.55rem; }
+  .countdown{ width:100%; gap:7px; }
+  .countdown div{ flex:1; min-width:0; padding:8px 5px; }
+  .countdown .val{ font-size:1.1rem; }
+  .why-card{ padding:26px 18px; }
+  .footer-grid{ gap:22px 14px; }
+  .footer-grid{ display:block; }
+  .footer-grid > nav,
+  .footer-grid > div:not(.footer-brand),
+  .footer-bottom{ display:none; }
+  .footer-brand{ display:block; }
+  .footer-brand p{ max-width:320px; margin-top:14px; }
+  .filter-panel{ max-height:none; overflow:visible; scrollbar-width:thin; }
+  .filter-toggle{
+    width:100%; display:flex; align-items:center; justify-content:space-between;
+    font-size:1rem; font-weight:700; padding:2px 0; min-height:28px;
+  }
+  .filter-panel-content{ display:none; padding-top:18px; }
+  .filter-panel.is-open{ max-height:520px; overflow-y:auto; }
+  .filter-panel.is-open .filter-panel-content{ display:block; }
+  fieldset.filter-group{ display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); column-gap:14px; }
+  fieldset.filter-group .filter-title{ grid-column:1/-1; }
+  fieldset.filter-group label{ margin-bottom:8px; }
+  .cart-item{ grid-template-columns:64px minmax(0,1fr); gap:12px; padding:18px 0; }
+  .cart-item img{ width:64px; height:64px; }
+  .ci-price{ grid-column:2; }
+  .coupon-row{ flex-wrap:wrap; }
+  .coupon-row input{ min-width:0; width:100%; }
+  .coupon-row .btn{ width:100%; }
+  .form-grid{ gap:14px; }
+  .auth-wrap{ padding:28px 14px; }
+  .auth-card{ padding:32px 22px; border-radius:var(--radius-m); }
+  .auth-row{ gap:12px; align-items:flex-start; }
+  .auth-socials{ flex-direction:column; }
+  .success-box{ width:calc(100% - 28px); padding:44px 24px; }
+  .spec-table{ display:block; overflow-x:auto; white-space:nowrap; }
+  .pd-thumbs{ overflow-x:auto; padding-bottom:4px; }
+  .pd-actions{ flex-direction:column; }
+  .pd-actions .btn{ width:100%; }
 }

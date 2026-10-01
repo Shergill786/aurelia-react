@@ -1,78 +1,216 @@
-import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useAuth, useShop, useTheme } from '../../context/contexts';
+import { useKeyDown, useLockBodyScroll } from '../../hooks/useEvents';
 import { useScroll } from '../../hooks/useScroll';
+import SearchBox from './SearchBox';
 import Footer from './Footer';
-import Navbar from './Navbar';
 
-/** Thin gradient bar at the very top that fills as you scroll. */
-function ScrollProgress() {
-  const { progress } = useScroll();
-  return <div id="scrollProgress" style={{ width: `${progress}%` }} aria-hidden="true" />;
+/** Main links */
+const NAV_LINKS = [
+  { to: '/home', label: 'Home' },
+  { to: '/shop', label: 'Shop' },
+  { to: '/about', label: 'About' },
+  { to: '/contact', label: 'Contact' },
+  { to: '/orders', label: 'Orders' },
+];
+
+const DRAWER_EXTRA = [
+  { to: '/wishlist', label: 'Wishlist' },
+  { to: '/cart', label: 'Cart' },
+];
+
+/** Logo */
+export function Logo({ style }) {
+  return (
+    <Link
+      to="/home"
+      className="logo"
+      style={style}
+      aria-label="Aurelia home"
+    >
+      AUR<span>ELIA</span>
+    </Link>
+  );
 }
 
-/** "Back to top" button that appears after scrolling 500px. */
-function ScrollTopButton() {
-  const { y } = useScroll();
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  const dark = theme === 'dark';
+
   return (
     <button
       type="button"
-      id="scrollTop"
-      className={y > 500 ? 'show' : ''}
-      onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-      aria-label="Back to top"
-      tabIndex={y > 500 ? 0 : -1}
+      className="theme-toggle"
+      onClick={toggleTheme}
+      aria-pressed={dark}
+      aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
+      title="Toggle dark mode"
     >
-      ↑
+      <span className="knob" />
     </button>
   );
 }
 
-/**
- * Scroll to the top on every page change (a SPA doesn't do this by itself),
- * or to the #hash target when the link has one (e.g. /contact#faq).
- */
-function ScrollManager() {
-  const { pathname, hash } = useLocation();
-  useEffect(() => {
-    if (hash) {
-      document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth' });
-    } else {
-      // 'instant' so the new page starts at the top without a scroll animation
-      window.scrollTo({ top: 0, behavior: 'instant' });
-    }
-  }, [pathname, hash]);
-  return null;
+/** Icon link with a live count badge */
+function IconLink({ to, icon, label, count }) {
+  return (
+    <Link
+      to={to}
+      className="nav-icon"
+      title={label}
+      aria-label={
+        count !== undefined
+          ? `${label} (${count} items)`
+          : label
+      }
+    >
+      <span aria-hidden="true">{icon}</span>
+
+      {count !== undefined && (
+        <span className="badge" aria-hidden="true">
+          {count}
+        </span>
+      )}
+    </Link>
+  );
 }
 
-/**
- * Layout — the frame shared by every normal page:
- * skip link, announcement bar, navbar, <main> (the routed page), footer.
- */
-export default function Layout() {
-  const { pathname } = useLocation();
+function MobileDrawer({ open, onClose, accountLabel }) {
+  useKeyDown('Escape', onClose, open);
+  useLockBodyScroll(open);
+
   return (
     <>
-      {/* With HashRouter, "#main" would be read as a route, so we move focus with the DOM instead */}
-      <a
-        href="#main"
-        className="skip-link"
-        onClick={(e) => {
-          e.preventDefault();
-          document.getElementById('main')?.focus();
-        }}
+      <div
+        className={`drawer-overlay ${open ? 'show' : ''}`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      <nav
+        id="navDrawer"
+        className={`nav-drawer ${open ? 'open' : ''}`}
+        aria-label="Mobile"
+        aria-hidden={!open}
+        inert={open ? undefined : true}
       >
-        Skip to content
-      </a>
-      <ScrollProgress />
-      <ScrollManager />
-      <p className="announce-bar">✦ Free shipping on orders over ₹4,999 · New Season Arrivals Now Live ✦</p>
+        <button
+          type="button"
+          className="nav-drawer-close"
+          onClick={onClose}
+          aria-label="Close menu"
+        >
+          ✕
+        </button>
+
+        {[...NAV_LINKS, ...DRAWER_EXTRA, {
+          to: '/login',
+          label: accountLabel,
+        }].map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            end={link.to === '/home'}
+            onClick={onClose}
+          >
+            {link.label}
+          </NavLink>
+        ))}
+      </nav>
+    </>
+  );
+}
+
+/** Navbar */
+export function Navbar() {
+  const { cartCount, wishlist } = useShop();
+  const { user } = useAuth();
+  const { y } = useScroll();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  return (
+    <>
+      <header className={`navbar ${y > 10 ? 'scrolled' : ''}`}>
+        <div className="container nav-inner">
+          <Logo />
+
+          <nav className="nav-links" aria-label="Main">
+            {NAV_LINKS.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                end={link.to === '/home'}
+              >
+                {link.label}
+              </NavLink>
+            ))}
+          </nav>
+
+          <SearchBox />
+
+          <div className="nav-icons">
+            <ThemeToggle />
+
+            <IconLink
+              to="/wishlist"
+              icon="♡"
+              label="Wishlist"
+              count={wishlist.length}
+            />
+
+            <IconLink
+              to="/cart"
+              icon="🛍"
+              label="Cart"
+              count={cartCount}
+            />
+
+            <IconLink
+              to="/login"
+              icon={
+                user
+                  ? <span className="nav-avatar">{user.name.charAt(0)}</span>
+                  : '☺'
+              }
+              label={
+                user
+                  ? `Account — signed in as ${user.name}`
+                  : 'Sign in'
+              }
+            />
+
+            <button
+              type="button"
+              className="hamburger"
+              onClick={() => setDrawerOpen(true)}
+              aria-label="Open menu"
+              aria-expanded={drawerOpen}
+              aria-controls="navDrawer"
+            >
+              ☰
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <MobileDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        accountLabel={user ? `Account (${user.name})` : 'Login'}
+      />
+    </>
+  );
+}
+
+export default function Layout() {
+  return (
+    <>
       <Navbar />
-      {/* key={pathname} replays the fade-in animation on each page change */}
-      <main id="main" key={pathname} className="page-fade" tabIndex={-1}>
+      <main>
         <Outlet />
       </main>
       <Footer />
-      <ScrollTopButton />
     </>
   );
 }

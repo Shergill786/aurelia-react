@@ -15,4 +15,10 @@ export const AuthContext = createContext(null);
 export const useTheme = () => useContext(ThemeContext);
 export const useToast = () => useContext(ToastContext);
 export const useShop = () => useContext(ShopContext);
-export const useAuth = () => useContext(AuthContext);
+
+/** Signed-in user + login/register/logout. Throws if used outside <AuthProvider>. */
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used inside AuthProvider');
+  return context;
+}

@@ -1,68 +1,69 @@
-import { createContext, useContext, useEffect, useState } from "react";
-import { loginUser, registerUser } from "../utils/api";
+import { useCallback, useEffect, useState } from "react";
+import { loginUser, registerUser, SESSION_EXPIRED_EVENT } from "../utils/api";
+import { AuthContext, useToast } from "./contexts";
 
-const AuthContext = createContext(null);
+/** Read the saved user once at start-up (bad JSON clears the saved session). */
+function readSavedUser() {
+  try {
+    const saved = localStorage.getItem("user");
+    return saved && localStorage.getItem("token") ? JSON.parse(saved) : null;
+  } catch {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    return null;
+  }
+}
 
+/**
+ * AuthProvider — the signed-in user, backed by the Aurelia server.
+ * The JWT token and user are kept in localStorage so a refresh stays signed in.
+ * If the server ever rejects the token (expired, or JWT_SECRET changed),
+ * api.js fires SESSION_EXPIRED_EVENT and we sign the user out here.
+ */
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const showToast = useToast();
+  const [user, setUser] = useState(readSavedUser);
 
-  // Load saved user when the website starts
-  useEffect(() => {
-    try {
-      const savedUser = localStorage.getItem("user");
+  const saveSession = (data) => {
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+    setUser(data.user);
+  };
 
-      if (savedUser) {
-        setUser(JSON.parse(savedUser));
-      }
-    } catch (error) {
-      console.error("Could not load saved user:", error);
-      localStorage.removeItem("user");
-      localStorage.removeItem("token");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // LOGIN
   const login = async (email, password) => {
     const data = await loginUser(email, password);
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-
-    setUser(data.user);
-
+    saveSession(data);
     return data;
   };
 
-  // REGISTER
   const register = async (name, email, password) => {
     const data = await registerUser(name, email, password);
-
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-
-    setUser(data.user);
-
+    saveSession(data);
     return data;
   };
 
-  // LOGOUT
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
     setUser(null);
-  };
+  }, []);
+
+  // Sign out automatically when the server says the token is no good.
+  useEffect(() => {
+    const onExpired = () => {
+      logout();
+      showToast?.("Your session has expired — please sign in again", "error");
+    };
+    window.addEventListener(SESSION_EXPIRED_EVENT, onExpired);
+    return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
+  }, [logout, showToast]);
 
   const value = {
     user,
-    loading,
     login,
     register,
     logout,
-    isAuthenticated: !!user,
+    isAuthenticated: Boolean(user),
   };
 
   return (
@@ -70,14 +71,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-
-  if (!context) {
-    throw new Error("useAuth must be used inside AuthProvider");
-  }
-
-  return context;
 }

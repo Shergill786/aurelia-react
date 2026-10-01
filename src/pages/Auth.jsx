@@ -1,11 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { Link, useNavigate } from 'react-router-dom';
 
 import FormField from '../components/common/FormField';
 
-import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/contexts';
+import { useAuth, useToast } from '../context/contexts';
 
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
@@ -32,6 +31,40 @@ const STRENGTH_LABELS = [
 /**
  * PasswordInput
  */
+/**
+ * SlowServerNotice — appears if a sign-in / sign-up request is still running
+ * after a few seconds. The free Render server sleeps when idle and can take
+ * up to a minute to wake, so this tells the user why it's slow.
+ */
+function SlowServerNotice({ active }) {
+  const [slow, setSlow] = useState(false);
+
+  useEffect(() => {
+    if (!active) return undefined;
+    const timer = setTimeout(() => setSlow(true), 4000);
+    return () => {
+      clearTimeout(timer);
+      setSlow(false);
+    };
+  }, [active]);
+
+  if (!active || !slow) return null;
+
+  return (
+    <p
+      role="status"
+      style={{
+        fontSize: '.8rem',
+        color: 'rgba(255,255,255,.7)',
+        textAlign: 'center',
+        marginTop: 12,
+      }}
+    >
+      Waking up the server — the first sign-in can take up to a minute.
+    </p>
+  );
+}
+
 function PasswordInput({
   id,
   value,
@@ -270,17 +303,12 @@ export function Login() {
     }
   };
 
+  // Password reset isn't built on the server yet, so don't claim an email was sent.
   const forgotPassword = () => {
-    if (isEmail(email)) {
-      showToast(
-        `A reset link has been sent to ${email.trim()}`
-      );
-    } else {
-      setErrors({
-        email:
-          'Enter your email above first, then click "Forgot password?"',
-      });
-    }
+    showToast(
+      'Password reset isn\'t available yet — please contact support@aurelia.example',
+      'error'
+    );
   };
 
   if (user && !submitting) {
@@ -417,6 +445,8 @@ export function Login() {
             ? 'Signing in…'
             : 'Sign In'}
         </button>
+
+        <SlowServerNotice active={submitting} />
       </form>
     </AuthCard>
   );
@@ -692,6 +722,8 @@ export function Signup() {
             ? 'Creating Account…'
             : 'Create Account'}
         </button>
+
+        <SlowServerNotice active={submitting} />
       </form>
     </AuthCard>
   );

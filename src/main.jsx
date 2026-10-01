@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { AuthProvider } from './context/AuthContext';
 import { initRipple } from './dom/ripple';
 
 // Global styles — order matters: design system → page styles → fixes/extras.
@@ -18,8 +17,6 @@ initRipple();
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <App />
   </StrictMode>,
 );

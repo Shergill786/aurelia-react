@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BRANDS, SECTIONS, TYPES } from '../../data/products';
 import { formatINR } from '../../utils/format';
 
@@ -24,6 +25,7 @@ function CheckboxGroup({ legend, options, selected, onToggle }) {
  * The Shop page owns the state; this component only displays it.
  */
 export default function FilterPanel({ filters, onChange, onClear }) {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const update = (patch) => onChange({ ...filters, ...patch });
 
   // Add the value if missing, remove it if present.
@@ -33,7 +35,19 @@ export default function FilterPanel({ filters, onChange, onClear }) {
   };
 
   return (
-    <aside className="filter-panel" aria-label="Product filters">
+    <aside className={`filter-panel${mobileOpen ? ' is-open' : ''}`} aria-label="Product filters">
+      <button
+        type="button"
+        className="filter-toggle"
+        aria-expanded={mobileOpen}
+        aria-controls="filter-panel-content"
+        onClick={() => setMobileOpen((open) => !open)}
+      >
+        <span>Filters</span>
+        <span aria-hidden="true">{mobileOpen ? '−' : '+'}</span>
+      </button>
+
+      <div id="filter-panel-content" className="filter-panel-content">
       <div className="filter-group">
         <label htmlFor="pageSearchInput" className="filter-title">
           Search
@@ -92,6 +106,7 @@ export default function FilterPanel({ filters, onChange, onClear }) {
       <button type="button" className="btn btn-outline btn-block btn-sm" onClick={onClear}>
         Clear Filters
       </button>
+      </div>
     </aside>
   );
 }
