@@ -334,18 +334,6 @@ export function Login() {
           <Link to="/signup">
             Create one
           </Link>
-
-          <br />
-
-          <Link
-            to="/home"
-            style={{
-              fontWeight: 400,
-              opacity: 0.8,
-            }}
-          >
-            Continue as guest →
-          </Link>
         </>
       }
     >
