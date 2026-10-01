@@ -25,7 +25,6 @@ export function validate(values, rules) {
 /** Checkout rules — Indian PIN / mobile formats when the country is India. */
 export const checkoutRules = {
   fullName: (v) => (v.trim().length >= 2 ? '' : 'Please enter your full name'),
-  email: (v) => (isEmail(v) ? '' : 'Please enter a valid email address'),
   address: (v) => (v.trim().length >= 5 ? '' : 'Please enter your delivery address'),
   city: (v) => (v.trim().length >= 2 ? '' : 'Please enter your city'),
   state: (v) => (v.trim().length >= 2 ? '' : 'Please enter your state or province'),

@@ -56,7 +56,6 @@ const COUNTRIES = [
 
 const EMPTY_FORM = {
   fullName: '',
-  email: '',
   address: '',
   city: '',
   state: '',
@@ -158,11 +157,17 @@ function OrderConfirmation({
                 )}
               </strong>
               {' '}
-              is confirmed, and a confirmation
-              has been sent to{' '}
-              <strong>
-                {shipTo.email}
-              </strong>.
+              is confirmed.
+              {shipTo.email && (
+                <>
+                  {' '}
+                  A confirmation has been sent to{' '}
+                  <strong>
+                    {shipTo.email}
+                  </strong>
+                  .
+                </>
+              )}
             </p>
 
           </header>
@@ -536,7 +541,6 @@ export default function Checkout() {
 
       const {
         fullName,
-        email,
         address,
         city,
         state,
@@ -548,7 +552,6 @@ export default function Checkout() {
 
       const shippingDetails = {
         name: fullName,
-        email,
         address,
         city,
         state,
@@ -752,22 +755,6 @@ export default function Checkout() {
                           'Jane Doe',
                         autoComplete:
                           'name',
-                      },
-                    }
-                  )}
-
-
-                  {field(
-                    'email',
-                    'Email Address',
-                    {
-                      full: true,
-                      input: {
-                        type: 'email',
-                        placeholder:
-                          'you@example.com',
-                        autoComplete:
-                          'email',
                       },
                     }
                   )}

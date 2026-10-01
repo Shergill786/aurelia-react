@@ -1267,7 +1267,7 @@ app.post(
 
       const customerEmail =
         String(
-          shipTo.email || req.user.email || ""
+          shipTo.email || req.user?.email || ""
         ).trim();
 
       const customerPhone =
@@ -1297,7 +1297,6 @@ app.post(
 
       if (
         !customerName ||
-        !customerEmail ||
         !customerPhone ||
         !address ||
         !city ||
