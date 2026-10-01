@@ -10,6 +10,7 @@ import { useShop } from '../context/contexts';
 
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
+import { normalizeCart } from '../utils/cart';
 import { formatINR } from '../utils/format';
 
 
@@ -47,11 +48,13 @@ function OrderCard({
 
 
   const items =
-    Array.isArray(
-      order.items
-    )
-      ? order.items
-      : [];
+    normalizeCart(
+      Array.isArray(
+        order.items
+      )
+        ? order.items
+        : []
+    );
 
 
   const itemCount =

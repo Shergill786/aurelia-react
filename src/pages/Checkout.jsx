@@ -15,7 +15,7 @@ import {
 
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
-import { computeTotals } from '../utils/cart';
+import { computeTotals, normalizeCart } from '../utils/cart';
 import { formatINR } from '../utils/format';
 import {
   checkoutRules,
@@ -74,15 +74,17 @@ function OrderConfirmation({
   order,
   onViewOrders,
 }) {
+  const items = normalizeCart(order.items);
+
   const totals = computeTotals(
-    order.items,
+    items,
     order.coupon
   );
 
   const itemCount =
-    order.items.reduce(
+    items.reduce(
       (sum, item) =>
-        sum + item.qty,
+        sum + (Number(item.qty) || 0),
       0
     );
 
@@ -186,16 +188,17 @@ function OrderConfirmation({
 
               <ul className="order-confirm-items">
 
-                {order.items.map(
+                {items.map(
                   (item) => (
                     <li
                       key={
-                        item.key
+                        item.key ||
+                        `${item.id || 'item'}-${item.name || 'product'}`
                       }
                     >
 
                       <img
-                        src={item.img}
+                        src={item.img || ''}
                         alt=""
                         width="56"
                         height="56"
@@ -215,7 +218,7 @@ function OrderConfirmation({
                               ? `Size ${item.options.size} · `
                               : ''}
 
-                          Qty {item.qty}
+                          Qty {Number(item.qty) || 0}
 
                         </small>
 
@@ -224,8 +227,8 @@ function OrderConfirmation({
 
                       <span>
                         {formatINR(
-                          item.price *
-                            item.qty,
+                          (Number(item.price) || 0) *
+                            (Number(item.qty) || 0),
                           2
                         )}
                       </span>

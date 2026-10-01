@@ -1071,20 +1071,38 @@ function formatFrontendOrder(
       (item) => ({
         id: item.id,
 
+        key:
+          item.id ||
+          item.product_id,
+
+        dbId:
+          item.id,
+
         productId:
           item.product_id,
 
         productName:
           item.product_name,
 
+        name:
+          item.product_name ||
+          "Product",
+
         imageUrl:
           item.image_url,
 
+        img:
+          item.image_url ||
+          "",
+
         price:
-          Number(item.price),
+          Number(item.price) || 0,
+
+        qty:
+          Number(item.quantity) || 1,
 
         quantity:
-          Number(item.quantity),
+          Number(item.quantity) || 1,
 
         options:
           parseOptions(

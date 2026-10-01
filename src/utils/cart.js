@@ -23,14 +23,40 @@ export function cartLineKey(id, options = {}) {
   return [id, ...parts].join('_').replace(/[^\w-]/g, '');
 }
 
+/** Normalise mixed item shapes from the cart and saved orders. */
+export function normalizeCart(items = []) {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items.map((item) => {
+    const qtyValue = Number(item?.qty ?? item?.quantity ?? item?.count ?? 0);
+    const priceValue = Number(item?.price ?? item?.unitPrice ?? 0);
+    const qty = Number.isFinite(qtyValue) ? qtyValue : 0;
+    const price = Number.isFinite(priceValue) ? priceValue : 0;
+
+    return {
+      ...item,
+      id: item?.id ?? item?.productId ?? item?.product_id,
+      key: item?.key ?? item?.dbId ?? item?.id ?? item?.productId ?? item?.product_id,
+      name: item?.name ?? item?.productName ?? item?.product_name ?? 'Product',
+      img: item?.img ?? item?.imageUrl ?? item?.image_url ?? '',
+      price,
+      qty,
+      quantity: qty,
+      options: item?.options ?? {},
+    };
+  });
+}
+
 /** Sum of price × quantity for every line. */
 export function cartSubtotal(cart) {
-  return cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  return normalizeCart(cart).reduce((sum, item) => sum + item.price * item.qty, 0);
 }
 
 /** Total number of items (used for the navbar badge). */
 export function cartCount(cart) {
-  return cart.reduce((sum, item) => sum + item.qty, 0);
+  return normalizeCart(cart).reduce((sum, item) => sum + item.qty, 0);
 }
 
 /**
@@ -38,8 +64,9 @@ export function cartCount(cart) {
  * order all call this, so the numbers can never disagree.
  */
 export function computeTotals(cart, couponCode = null) {
+  const safeCart = normalizeCart(cart);
   const rate = COUPONS[couponCode] || 0;
-  const subtotal = cartSubtotal(cart);
+  const subtotal = cartSubtotal(safeCart);
   const discount = subtotal * rate;
   const afterDiscount = subtotal - discount;
   const gst = afterDiscount * GST_RATE;
