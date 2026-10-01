@@ -159,6 +159,24 @@ async function createOrdersTable() {
       )
     `);
 
+    const orderMigrations = [
+      "ALTER TABLE orders ADD COLUMN subtotal DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER order_number",
+      "ALTER TABLE orders ADD COLUMN discount DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER subtotal",
+      "ALTER TABLE orders ADD COLUMN gst DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER discount",
+      "ALTER TABLE orders ADD COLUMN shipping DECIMAL(10, 2) NOT NULL DEFAULT 0.00 AFTER gst",
+      "ALTER TABLE orders ADD COLUMN customer_phone VARCHAR(30) AFTER customer_email",
+      "ALTER TABLE orders ADD COLUMN state VARCHAR(100) AFTER city",
+      "ALTER TABLE orders ADD COLUMN pincode VARCHAR(20) AFTER state",
+    ];
+
+    for (const migration of orderMigrations) {
+      try {
+        await connection.query(migration);
+      } catch (error) {
+        if (error.code !== 'ER_DUP_FIELDNAME') throw error;
+      }
+    }
+
     console.log("Orders table ready");
   } finally {
     connection.release();

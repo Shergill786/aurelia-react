@@ -28,6 +28,7 @@ export const checkoutRules = {
   email: (v) => (isEmail(v) ? '' : 'Please enter a valid email address'),
   address: (v) => (v.trim().length >= 5 ? '' : 'Please enter your delivery address'),
   city: (v) => (v.trim().length >= 2 ? '' : 'Please enter your city'),
+  state: (v) => (v.trim().length >= 2 ? '' : 'Please enter your state or province'),
   zip: (v, all) => {
     const ok = all.country === 'India' ? /^[1-9]\d{5}$/.test(v.trim()) : /^[A-Za-z0-9 -]{3,10}$/.test(v.trim());
     return ok ? '' : 'Please enter a valid postal code';

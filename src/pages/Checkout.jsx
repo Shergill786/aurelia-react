@@ -59,6 +59,7 @@ const EMPTY_FORM = {
   email: '',
   address: '',
   city: '',
+  state: '',
   zip: '',
   phone: '',
   country: 'India',
@@ -383,6 +384,7 @@ export default function Checkout() {
 
   const {
     cart,
+    cartLoading,
     totals,
     placeOrder,
   } = useShop();
@@ -534,6 +536,7 @@ export default function Checkout() {
         email,
         address,
         city,
+        state,
         zip,
         phone,
         country,
@@ -545,6 +548,8 @@ export default function Checkout() {
         email,
         address,
         city,
+        state,
+        pincode: zip,
         zip,
         phone,
         country,
@@ -683,7 +688,13 @@ export default function Checkout() {
 
         <div className="container">
 
-          {cart.length === 0 ? (
+          {cartLoading ? (
+
+            <div className="empty-state" role="status">
+              <p>Loading your cart...</p>
+            </div>
+
+          ) : cart.length === 0 ? (
 
             <EmptyState
               icon="🛒"
@@ -783,6 +794,20 @@ export default function Checkout() {
                           'Mumbai',
                         autoComplete:
                           'address-level2',
+                      },
+                    }
+                  )}
+
+
+                  {field(
+                    'state',
+                    'State / Province',
+                    {
+                      input: {
+                        placeholder:
+                          'Maharashtra',
+                        autoComplete:
+                          'address-level1',
                       },
                     }
                   )}
