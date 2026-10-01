@@ -36,7 +36,6 @@ const pool = mysql.createPool({
   password: process.env.MYSQL_PASSWORD,
   database: process.env.MYSQL_DATABASE || "aurelia_db",
 
-  // REQUIRED FOR TiDB CLOUD
   ssl: {
     minVersion: "TLSv1.2",
     rejectUnauthorized: true,
@@ -58,7 +57,7 @@ async function createUsersTable() {
   try {
     await connection.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id INT AUTO_INCREMENT PRIMARY KEY,
+        id BIGINT AUTO_INCREMENT PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         email VARCHAR(255) NOT NULL UNIQUE,
         password_hash VARCHAR(255) NOT NULL,
@@ -124,201 +123,268 @@ app.get("/api/health", async (req, res) => {
 
 
 // ===============================
+// AUTHENTICATION MIDDLEWARE
+// ===============================
+
+function authenticateToken(req, res, next) {
+  const authHeader =
+    req.headers.authorization;
+
+  if (!authHeader) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required.",
+    });
+  }
+
+  const token =
+    authHeader.split(" ")[1];
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message:
+        "Authentication token missing.",
+    });
+  }
+
+  jwt.verify(
+    token,
+    process.env.JWT_SECRET,
+    (error, user) => {
+      if (error) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Invalid or expired token.",
+        });
+      }
+
+      req.user = user;
+      next();
+    }
+  );
+}
+
+
+// ===============================
 // REGISTER
 // ===============================
 
-app.post("/api/auth/register", async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      password,
-    } = req.body;
+app.post(
+  "/api/auth/register",
+  async (req, res) => {
+    try {
+      const {
+        name,
+        email,
+        password,
+      } = req.body;
 
-    if (!name || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Name, email and password are required.",
-      });
-    }
-
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Password must be at least 6 characters.",
-      });
-    }
-
-    const cleanEmail =
-      email.trim().toLowerCase();
-
-    const [existingUsers] =
-      await pool.query(
-        "SELECT id FROM users WHERE email = ? LIMIT 1",
-        [cleanEmail]
-      );
-
-    if (existingUsers.length > 0) {
-      return res.status(409).json({
-        success: false,
-        message:
-          "An account with this email already exists.",
-      });
-    }
-
-    const passwordHash =
-      await bcrypt.hash(password, 12);
-
-    const [result] =
-      await pool.query(
-        `
-        INSERT INTO users
-        (name, email, password_hash)
-        VALUES (?, ?, ?)
-        `,
-        [
-          name.trim(),
-          cleanEmail,
-          passwordHash,
-        ]
-      );
-
-    const token = jwt.sign(
-      {
-        id: result.insertId,
-        email: cleanEmail,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
+      if (
+        !name ||
+        !email ||
+        !password
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Name, email and password are required.",
+        });
       }
-    );
 
-    res.status(201).json({
-      success: true,
-      message:
-        "Account created successfully.",
+      if (password.length < 6) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Password must be at least 6 characters.",
+        });
+      }
 
-      token,
+      const cleanEmail =
+        email.trim().toLowerCase();
 
-      user: {
-        id: result.insertId,
-        name: name.trim(),
-        email: cleanEmail,
-      },
-    });
-  } catch (error) {
-    console.error(
-      "Register error:",
-      error
-    );
+      const [existingUsers] =
+        await pool.query(
+          `
+          SELECT id
+          FROM users
+          WHERE email = ?
+          LIMIT 1
+          `,
+          [cleanEmail]
+        );
 
-    res.status(500).json({
-      success: false,
-      message: "Registration failed.",
-    });
+      if (existingUsers.length > 0) {
+        return res.status(409).json({
+          success: false,
+          message:
+            "An account with this email already exists.",
+        });
+      }
+
+      const passwordHash =
+        await bcrypt.hash(
+          password,
+          12
+        );
+
+      const [result] =
+        await pool.query(
+          `
+          INSERT INTO users
+          (name, email, password_hash)
+          VALUES (?, ?, ?)
+          `,
+          [
+            name.trim(),
+            cleanEmail,
+            passwordHash,
+          ]
+        );
+
+      const token =
+        jwt.sign(
+          {
+            id: result.insertId,
+            email: cleanEmail,
+          },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "7d",
+          }
+        );
+
+      res.status(201).json({
+        success: true,
+        message:
+          "Account created successfully.",
+
+        token,
+
+        user: {
+          id: result.insertId,
+          name: name.trim(),
+          email: cleanEmail,
+        },
+      });
+    } catch (error) {
+      console.error(
+        "Register error:",
+        error
+      );
+
+      res.status(500).json({
+        success: false,
+        message:
+          "Registration failed.",
+      });
+    }
   }
-});
+);
 
 
 // ===============================
 // LOGIN
 // ===============================
 
-app.post("/api/auth/login", async (req, res) => {
-  try {
-    const {
-      email,
-      password,
-    } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Email and password are required.",
-      });
-    }
-
-    const cleanEmail =
-      email.trim().toLowerCase();
-
-    const [users] =
-      await pool.query(
-        `
-        SELECT
-          id,
-          name,
-          email,
-          password_hash
-        FROM users
-        WHERE email = ?
-        LIMIT 1
-        `,
-        [cleanEmail]
-      );
-
-    if (users.length === 0) {
-      return res.status(401).json({
-        success: false,
-        message:
-          "Invalid email or password.",
-      });
-    }
-
-    const user = users[0];
-
-    const passwordCorrect =
-      await bcrypt.compare(
+app.post(
+  "/api/auth/login",
+  async (req, res) => {
+    try {
+      const {
+        email,
         password,
-        user.password_hash
+      } = req.body;
+
+      if (!email || !password) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Email and password are required.",
+        });
+      }
+
+      const cleanEmail =
+        email.trim().toLowerCase();
+
+      const [users] =
+        await pool.query(
+          `
+          SELECT
+            id,
+            name,
+            email,
+            password_hash
+          FROM users
+          WHERE email = ?
+          LIMIT 1
+          `,
+          [cleanEmail]
+        );
+
+      if (users.length === 0) {
+        return res.status(401).json({
+          success: false,
+          message:
+            "Invalid email or password.",
+        });
+      }
+
+      const user = users[0];
+
+      const passwordCorrect =
+        await bcrypt.compare(
+          password,
+          user.password_hash
+        );
+
+      if (!passwordCorrect) {
+        return res.status(401).json({
+          success: false,
+          message:
+            "Invalid email or password.",
+        });
+      }
+
+      const token =
+        jwt.sign(
+          {
+            id: user.id,
+            email: user.email,
+          },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "7d",
+          }
+        );
+
+      res.json({
+        success: true,
+        message:
+          "Login successful.",
+
+        token,
+
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+        },
+      });
+    } catch (error) {
+      console.error(
+        "Login error:",
+        error
       );
 
-    if (!passwordCorrect) {
-      return res.status(401).json({
+      res.status(500).json({
         success: false,
-        message:
-          "Invalid email or password.",
+        message: "Login failed.",
       });
     }
-
-    const token = jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-      },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
-    );
-
-    res.json({
-      success: true,
-      message: "Login successful.",
-
-      token,
-
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-      },
-    });
-  } catch (error) {
-    console.error(
-      "Login error:",
-      error
-    );
-
-    res.status(500).json({
-      success: false,
-      message: "Login failed.",
-    });
   }
-});
+);
 
 
 // ===============================
@@ -327,9 +393,25 @@ app.post("/api/auth/login", async (req, res) => {
 
 app.get(
   "/api/cart/:userId",
+  authenticateToken,
   async (req, res) => {
     try {
-      const { userId } = req.params;
+      const requestedUserId =
+        Number(req.params.userId);
+
+      const loggedInUserId =
+        Number(req.user.id);
+
+      if (
+        requestedUserId !==
+        loggedInUserId
+      ) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "You cannot access another user's cart.",
+        });
+      }
 
       const [items] =
         await pool.query(
@@ -350,7 +432,7 @@ app.get(
           WHERE user_id = ?
           ORDER BY created_at DESC
           `,
-          [userId]
+          [loggedInUserId]
         );
 
       const cart = items.map(
@@ -366,7 +448,7 @@ app.get(
                       item.options_json
                     )
                   : item.options_json;
-            } catch (error) {
+            } catch {
               options = {};
             }
           }
@@ -404,10 +486,10 @@ app.get(
 
 app.post(
   "/api/cart",
+  authenticateToken,
   async (req, res) => {
     try {
       const {
-        userId,
         productId,
         productName,
         price,
@@ -417,8 +499,12 @@ app.post(
         options = {},
       } = req.body;
 
+      // IMPORTANT:
+      // User ID comes from JWT,
+      // NOT from the browser.
+      const userId = req.user.id;
+
       if (
-        !userId ||
         !productId ||
         !productName ||
         price == null
@@ -436,8 +522,6 @@ app.post(
           Number(quantity) || 1
         );
 
-      // If frontend does not provide a cart key,
-      // use the product ID as a fallback.
       const finalCartKey =
         cartKey ||
         String(productId);
@@ -520,10 +604,15 @@ app.post(
 
 app.put(
   "/api/cart/:id",
+  authenticateToken,
   async (req, res) => {
     try {
-      const { id } = req.params;
-      const { quantity } = req.body;
+      const { id } =
+        req.params;
+
+      const {
+        quantity,
+      } = req.body;
 
       const newQuantity =
         Number(quantity);
@@ -550,10 +639,12 @@ app.put(
             updated_at =
               CURRENT_TIMESTAMP
           WHERE id = ?
+            AND user_id = ?
           `,
           [
             newQuantity,
             id,
+            req.user.id,
           ]
         );
 
@@ -594,17 +685,23 @@ app.put(
 
 app.delete(
   "/api/cart/:id",
+  authenticateToken,
   async (req, res) => {
     try {
-      const { id } = req.params;
+      const { id } =
+        req.params;
 
       const [result] =
         await pool.query(
           `
           DELETE FROM cart_items
           WHERE id = ?
+            AND user_id = ?
           `,
-          [id]
+          [
+            id,
+            req.user.id,
+          ]
         );
 
       if (
@@ -644,16 +741,32 @@ app.delete(
 
 app.delete(
   "/api/cart/user/:userId",
+  authenticateToken,
   async (req, res) => {
     try {
-      const { userId } = req.params;
+      const requestedUserId =
+        Number(req.params.userId);
+
+      const loggedInUserId =
+        Number(req.user.id);
+
+      if (
+        requestedUserId !==
+        loggedInUserId
+      ) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "You cannot clear another user's cart.",
+        });
+      }
 
       await pool.query(
         `
         DELETE FROM cart_items
         WHERE user_id = ?
         `,
-        [userId]
+        [loggedInUserId]
       );
 
       res.json({
