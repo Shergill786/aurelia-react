@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
 import EmptyState from '../components/common/EmptyState';
 import FormField from '../components/common/FormField';
@@ -9,6 +9,7 @@ import { useShop, useToast } from '../context/contexts';
 
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
+import { computeTotals } from '../utils/cart';
 import { formatINR } from '../utils/format';
 import { checkoutRules, validate } from '../utils/validation';
 
@@ -55,6 +56,188 @@ const EMPTY_FORM = {
 };
 
 
+/* =========================================================
+   ORDER CONFIRMATION
+   ========================================================= */
+
+/**
+ * OrderConfirmation — the "Order Placed!" page.
+ *
+ * Props:
+ *   order         the saved order object returned by placeOrder()
+ *   onViewOrders  called by the "View My Orders" button
+ */
+function OrderConfirmation({ order, onViewOrders }) {
+  // The order total is stored on the order; the breakdown is recomputed
+  // from the saved items with the same computeTotals() the cart uses.
+  const totals = computeTotals(order.items, order.coupon);
+
+  const itemCount = order.items.reduce(
+    (sum, item) => sum + item.qty,
+    0
+  );
+
+  // DOM: the form was scrolled down when "Place Order" was clicked,
+  // so jump back to the top where the confirmation starts.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
+  const { shipTo } = order;
+
+  return (
+    <>
+      <Breadcrumb
+        items={[
+          { label: 'Home', to: '/home' },
+          { label: 'Checkout', to: '/checkout' },
+          { label: 'Order Confirmed' },
+        ]}
+      />
+
+      <section
+        className="section order-confirm"
+        aria-labelledby="success-title"
+      >
+        <div className="container order-confirm-inner">
+
+          {/* ---------- Heading ---------- */}
+          <header className="order-confirm-head">
+            <div
+              className="success-check"
+              aria-hidden="true"
+            >
+              ✓
+            </div>
+
+            <h1 id="success-title">
+              Order Placed!
+            </h1>
+
+            <p>
+              Thank you for shopping with Aurelia. Order{' '}
+              <strong>{order.id}</strong> for{' '}
+              <strong>{formatINR(order.total, 2)}</strong> is
+              confirmed, and a confirmation has been sent to{' '}
+              <strong>{shipTo.email}</strong>.
+            </p>
+          </header>
+
+
+          <div className="order-confirm-grid">
+
+            {/* ---------- Items + totals ---------- */}
+            <article
+              className="summary-box"
+              aria-labelledby="confirm-items-title"
+            >
+              <h2 id="confirm-items-title">
+                {itemCount} item{itemCount !== 1 ? 's' : ''} ordered
+              </h2>
+
+              <ul className="order-confirm-items">
+                {order.items.map((item) => (
+                  <li key={item.key}>
+                    <img
+                      src={item.img}
+                      alt=""
+                      width="56"
+                      height="56"
+                    />
+
+                    <span className="order-confirm-name">
+                      {item.name}
+                      <small>
+                        {item.options?.size === 'One Size'
+                          ? 'One Size · '
+                          : item.options?.size
+                            ? `Size ${item.options.size} · `
+                            : ''}
+                        Qty {item.qty}
+                      </small>
+                    </span>
+
+                    <span>
+                      {formatINR(item.price * item.qty, 2)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+
+              <SummaryRows totals={totals} />
+            </article>
+
+
+            {/* ---------- Delivery + payment ---------- */}
+            <aside
+              className="summary-box"
+              aria-labelledby="confirm-delivery-title"
+            >
+              <h2 id="confirm-delivery-title">
+                Delivery details
+              </h2>
+
+              <address className="order-confirm-address">
+                <strong>{shipTo.name}</strong>
+                {shipTo.address && <span>{shipTo.address}</span>}
+                <span>
+                  {[shipTo.city, shipTo.zip]
+                    .filter(Boolean)
+                    .join(' ')}
+                </span>
+                <span>{shipTo.country}</span>
+                {shipTo.phone && <span>{shipTo.phone}</span>}
+              </address>
+
+              <dl className="order-confirm-meta">
+                <div>
+                  <dt>Order number</dt>
+                  <dd>{order.id}</dd>
+                </div>
+                <div>
+                  <dt>Order date</dt>
+                  <dd>{order.date}</dd>
+                </div>
+                <div>
+                  <dt>Payment</dt>
+                  <dd>{order.payment}</dd>
+                </div>
+                <div>
+                  <dt>Estimated delivery</dt>
+                  <dd>3–5 business days</dd>
+                </div>
+              </dl>
+            </aside>
+
+          </div>
+
+
+          {/* ---------- Actions ---------- */}
+          <div className="order-confirm-actions">
+            <button
+              type="button"
+              className="btn btn-gold"
+              onClick={onViewOrders}
+              autoFocus
+            >
+              View My Orders
+            </button>
+
+            <Link
+              to="/shop"
+              className="btn btn-outline"
+            >
+              Continue Shopping
+            </Link>
+          </div>
+
+        </div>
+      </section>
+    </>
+  );
+}
+
+
 /**
  * Checkout page
  *
@@ -66,7 +249,6 @@ const EMPTY_FORM = {
  * - Order success screen
  */
 export default function Checkout() {
-  useDocumentTitle('Checkout');
 
   const {
     cart,
@@ -89,6 +271,8 @@ export default function Checkout() {
   );
 
   const [placedOrder, setPlacedOrder] = useState(null);
+
+  useDocumentTitle(placedOrder ? 'Order Confirmed' : 'Checkout');
 
 
   /* =========================================================
@@ -186,77 +370,18 @@ export default function Checkout() {
 
 
   /* =========================================================
-     SUCCESS SCREEN
+     ORDER CONFIRMATION PAGE
+     Shown in place of the form once the order is placed. It is a
+     normal page section (not a fixed overlay), so the navbar and
+     footer can never cover it.
      ========================================================= */
 
   if (placedOrder) {
     return (
-      <div
-        className="success-modal show"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="success-title"
-      >
-        <div className="success-box">
-
-          <div
-            className="success-check"
-            aria-hidden="true"
-          >
-            ✓
-          </div>
-
-
-          <h2 id="success-title">
-            Order Placed!
-          </h2>
-
-
-          <p>
-            Thank you for shopping with Aurelia.
-
-            {' '}
-
-            Order{' '}
-            <strong>
-              {placedOrder.id}
-            </strong>
-
-            {' '}
-
-            for{' '}
-
-            <strong>
-              {formatINR(
-                placedOrder.total,
-                2
-              )}
-            </strong>
-
-            {' '}
-
-            is confirmed, and a confirmation
-            has been sent to{' '}
-
-            <strong>
-              {placedOrder.shipTo.email}
-            </strong>.
-          </p>
-
-
-          <button
-            type="button"
-            className="btn btn-gold"
-            onClick={() =>
-              navigate('/orders')
-            }
-            autoFocus
-          >
-            View My Orders
-          </button>
-
-        </div>
-      </div>
+      <OrderConfirmation
+        order={placedOrder}
+        onViewOrders={() => navigate('/orders')}
+      />
     );
   }
 
