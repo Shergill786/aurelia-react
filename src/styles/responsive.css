@@ -141,6 +141,7 @@
   .cat-grid{ gap:12px; }
   .cat-card .overlay{ padding:12px; font-size:.82rem; }
   .product-grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px; }
+  .hslider .product-card{ width:220px; min-width:220px; }
   .pc-body{ padding:12px; }
   .pc-name{ font-size:.9rem; }
   .pc-price{ font-size:1rem; }

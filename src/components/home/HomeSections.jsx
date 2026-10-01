@@ -38,7 +38,7 @@ export function CategoryGrid() {
         <Reveal>
           <SectionHead eyebrow="Browse" title="Top Categories" id="categories-title" />
         </Reveal>
-        <div className="cat-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+        <div className="cat-grid">
           {CATEGORIES.map((c) => (
             <Reveal key={c.section}>
               <Link className="cat-card" to={`/shop?section=${c.section}`} style={{ display: 'block' }}>
