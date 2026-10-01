@@ -3,15 +3,24 @@ import { Link, useNavigate } from 'react-router-dom';
 
 import EmptyState from '../components/common/EmptyState';
 import FormField from '../components/common/FormField';
-import { Breadcrumb, PageHero } from '../components/common/PageHeader';
+import {
+  Breadcrumb,
+  PageHero,
+} from '../components/common/PageHeader';
 
-import { useShop, useToast } from '../context/contexts';
+import {
+  useShop,
+  useToast,
+} from '../context/contexts';
 
 import { useDocumentTitle } from '../hooks/useDocumentTitle';
 
 import { computeTotals } from '../utils/cart';
 import { formatINR } from '../utils/format';
-import { checkoutRules, validate } from '../utils/validation';
+import {
+  checkoutRules,
+  validate,
+} from '../utils/validation';
 
 import { SummaryRows } from './Cart';
 
@@ -60,40 +69,52 @@ const EMPTY_FORM = {
    ORDER CONFIRMATION
    ========================================================= */
 
-/**
- * OrderConfirmation — the "Order Placed!" page.
- *
- * Props:
- *   order         the saved order object returned by placeOrder()
- *   onViewOrders  called by the "View My Orders" button
- */
-function OrderConfirmation({ order, onViewOrders }) {
-  // The order total is stored on the order; the breakdown is recomputed
-  // from the saved items with the same computeTotals() the cart uses.
-  const totals = computeTotals(order.items, order.coupon);
-
-  const itemCount = order.items.reduce(
-    (sum, item) => sum + item.qty,
-    0
+function OrderConfirmation({
+  order,
+  onViewOrders,
+}) {
+  const totals = computeTotals(
+    order.items,
+    order.coupon
   );
 
-  // DOM: the form was scrolled down when "Place Order" was clicked,
-  // so jump back to the top where the confirmation starts.
+  const itemCount =
+    order.items.reduce(
+      (sum, item) =>
+        sum + item.qty,
+      0
+    );
+
+
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
+    window.scrollTo({
+      top: 0,
+      behavior: 'instant',
+    });
   }, []);
 
+
   const { shipTo } = order;
+
 
   return (
     <>
       <Breadcrumb
         items={[
-          { label: 'Home', to: '/home' },
-          { label: 'Checkout', to: '/checkout' },
-          { label: 'Order Confirmed' },
+          {
+            label: 'Home',
+            to: '/home',
+          },
+          {
+            label: 'Checkout',
+            to: '/checkout',
+          },
+          {
+            label: 'Order Confirmed',
+          },
         ]}
       />
+
 
       <section
         className="section order-confirm"
@@ -102,7 +123,9 @@ function OrderConfirmation({ order, onViewOrders }) {
         <div className="container order-confirm-inner">
 
           {/* ---------- Heading ---------- */}
+
           <header className="order-confirm-head">
+
             <div
               className="success-check"
               aria-hidden="true"
@@ -110,110 +133,222 @@ function OrderConfirmation({ order, onViewOrders }) {
               ✓
             </div>
 
+
             <h1 id="success-title">
               Order Placed!
             </h1>
 
+
             <p>
-              Thank you for shopping with Aurelia. Order{' '}
-              <strong>{order.id}</strong> for{' '}
-              <strong>{formatINR(order.total, 2)}</strong> is
-              confirmed, and a confirmation has been sent to{' '}
-              <strong>{shipTo.email}</strong>.
+              Thank you for shopping with Aurelia.
+              {' '}
+              Order{' '}
+              <strong>
+                {order.id}
+              </strong>
+              {' '}
+              for{' '}
+              <strong>
+                {formatINR(
+                  order.total,
+                  2
+                )}
+              </strong>
+              {' '}
+              is confirmed, and a confirmation
+              has been sent to{' '}
+              <strong>
+                {shipTo.email}
+              </strong>.
             </p>
+
           </header>
 
 
           <div className="order-confirm-grid">
 
             {/* ---------- Items + totals ---------- */}
+
             <article
               className="summary-box"
               aria-labelledby="confirm-items-title"
             >
+
               <h2 id="confirm-items-title">
-                {itemCount} item{itemCount !== 1 ? 's' : ''} ordered
+                {itemCount} item
+                {itemCount !== 1
+                  ? 's'
+                  : ''}{' '}
+                ordered
               </h2>
 
+
               <ul className="order-confirm-items">
-                {order.items.map((item) => (
-                  <li key={item.key}>
-                    <img
-                      src={item.img}
-                      alt=""
-                      width="56"
-                      height="56"
-                    />
 
-                    <span className="order-confirm-name">
-                      {item.name}
-                      <small>
-                        {item.options?.size === 'One Size'
-                          ? 'One Size · '
-                          : item.options?.size
-                            ? `Size ${item.options.size} · `
-                            : ''}
-                        Qty {item.qty}
-                      </small>
-                    </span>
+                {order.items.map(
+                  (item) => (
+                    <li
+                      key={
+                        item.key
+                      }
+                    >
 
-                    <span>
-                      {formatINR(item.price * item.qty, 2)}
-                    </span>
-                  </li>
-                ))}
+                      <img
+                        src={item.img}
+                        alt=""
+                        width="56"
+                        height="56"
+                      />
+
+
+                      <span className="order-confirm-name">
+
+                        {item.name}
+
+                        <small>
+
+                          {item.options?.size ===
+                          'One Size'
+                            ? 'One Size · '
+                            : item.options?.size
+                              ? `Size ${item.options.size} · `
+                              : ''}
+
+                          Qty {item.qty}
+
+                        </small>
+
+                      </span>
+
+
+                      <span>
+                        {formatINR(
+                          item.price *
+                            item.qty,
+                          2
+                        )}
+                      </span>
+
+                    </li>
+                  )
+                )}
+
               </ul>
 
-              <SummaryRows totals={totals} />
+
+              <SummaryRows
+                totals={totals}
+              />
+
             </article>
 
 
             {/* ---------- Delivery + payment ---------- */}
+
             <aside
               className="summary-box"
               aria-labelledby="confirm-delivery-title"
             >
+
               <h2 id="confirm-delivery-title">
                 Delivery details
               </h2>
 
+
               <address className="order-confirm-address">
-                <strong>{shipTo.name}</strong>
-                {shipTo.address && <span>{shipTo.address}</span>}
+
+                <strong>
+                  {shipTo.name}
+                </strong>
+
+
+                {shipTo.address && (
+                  <span>
+                    {shipTo.address}
+                  </span>
+                )}
+
+
                 <span>
-                  {[shipTo.city, shipTo.zip]
+                  {[
+                    shipTo.city,
+                    shipTo.zip,
+                  ]
                     .filter(Boolean)
                     .join(' ')}
                 </span>
-                <span>{shipTo.country}</span>
-                {shipTo.phone && <span>{shipTo.phone}</span>}
+
+
+                <span>
+                  {shipTo.country}
+                </span>
+
+
+                {shipTo.phone && (
+                  <span>
+                    {shipTo.phone}
+                  </span>
+                )}
+
               </address>
 
+
               <dl className="order-confirm-meta">
+
                 <div>
-                  <dt>Order number</dt>
-                  <dd>{order.id}</dd>
+                  <dt>
+                    Order number
+                  </dt>
+
+                  <dd>
+                    {order.id}
+                  </dd>
                 </div>
+
+
                 <div>
-                  <dt>Order date</dt>
-                  <dd>{order.date}</dd>
+                  <dt>
+                    Order date
+                  </dt>
+
+                  <dd>
+                    {order.date}
+                  </dd>
                 </div>
+
+
                 <div>
-                  <dt>Payment</dt>
-                  <dd>{order.payment}</dd>
+                  <dt>
+                    Payment
+                  </dt>
+
+                  <dd>
+                    {order.payment}
+                  </dd>
                 </div>
+
+
                 <div>
-                  <dt>Estimated delivery</dt>
-                  <dd>3–5 business days</dd>
+                  <dt>
+                    Estimated delivery
+                  </dt>
+
+                  <dd>
+                    3–5 business days
+                  </dd>
                 </div>
+
               </dl>
+
             </aside>
 
           </div>
 
 
           {/* ---------- Actions ---------- */}
+
           <div className="order-confirm-actions">
+
             <button
               type="button"
               className="btn btn-gold"
@@ -223,12 +358,14 @@ function OrderConfirmation({ order, onViewOrders }) {
               View My Orders
             </button>
 
+
             <Link
               to="/shop"
               className="btn btn-outline"
             >
               Continue Shopping
             </Link>
+
           </div>
 
         </div>
@@ -238,16 +375,10 @@ function OrderConfirmation({ order, onViewOrders }) {
 }
 
 
-/**
- * Checkout page
- *
- * Handles:
- * - Shipping details
- * - Payment method
- * - Form validation
- * - Order placement
- * - Order success screen
- */
+/* =========================================================
+   CHECKOUT PAGE
+   ========================================================= */
+
 export default function Checkout() {
 
   const {
@@ -256,131 +387,224 @@ export default function Checkout() {
     placeOrder,
   } = useShop();
 
-  const showToast = useToast();
 
-  const navigate = useNavigate();
+  const showToast =
+    useToast();
 
-  const formRef = useRef(null);
 
-  const [form, setForm] = useState(EMPTY_FORM);
+  const navigate =
+    useNavigate();
 
-  const [errors, setErrors] = useState({});
 
-  const [payment, setPayment] = useState(
+  const formRef =
+    useRef(null);
+
+
+  const [
+    form,
+    setForm,
+  ] = useState(
+    EMPTY_FORM
+  );
+
+
+  const [
+    errors,
+    setErrors,
+  ] = useState({});
+
+
+  const [
+    payment,
+    setPayment,
+  ] = useState(
     PAYMENT_METHODS[0].value
   );
 
-  const [placedOrder, setPlacedOrder] = useState(null);
 
-  useDocumentTitle(placedOrder ? 'Order Confirmed' : 'Checkout');
+  const [
+    placedOrder,
+    setPlacedOrder,
+  ] = useState(null);
+
+
+  const [
+    submitting,
+    setSubmitting,
+  ] = useState(false);
+
+
+  useDocumentTitle(
+    placedOrder
+      ? 'Order Confirmed'
+      : 'Checkout'
+  );
 
 
   /* =========================================================
      HANDLE INPUT CHANGE
      ========================================================= */
 
-  const handleChange = (e) => {
-    const {
-      name,
-      value,
-    } = e.target;
+  const handleChange =
+    (e) => {
+      const {
+        name,
+        value,
+      } = e.target;
 
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
 
-    if (errors[name]) {
-      setErrors((current) => ({
-        ...current,
-        [name]: '',
-      }));
-    }
-  };
+      setForm(
+        (current) => ({
+          ...current,
+          [name]: value,
+        })
+      );
+
+
+      if (errors[name]) {
+        setErrors(
+          (current) => ({
+            ...current,
+            [name]: '',
+          })
+        );
+      }
+    };
 
 
   /* =========================================================
      HANDLE CHECKOUT
      ========================================================= */
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const handleSubmit =
+    async (e) => {
 
-    const found = validate(
-      form,
-      checkoutRules
-    );
-
-    setErrors(found);
-
-    /* Validation failed */
-    if (Object.keys(found).length > 0) {
-      showToast(
-        'Please check the highlighted fields',
-        'error'
-      );
-
-      const firstError =
-        Object.keys(found)[0];
-
-      formRef.current
-        ?.querySelector(
-          `[name="${firstError}"]`
-        )
-        ?.focus();
-
-      return;
-    }
+      e.preventDefault();
 
 
-    /* Create shipping object */
-    const {
-      fullName,
-      email,
-      address,
-      city,
-      zip,
-      phone,
-      country,
-    } = form;
+      // Prevent double-clicking the button
+      // and accidentally creating two orders.
+      if (submitting) {
+        return;
+      }
 
 
-    const shippingDetails = {
-      name: fullName,
-      email,
-      address,
-      city,
-      zip,
-      phone,
-      country,
+      const found =
+        validate(
+          form,
+          checkoutRules
+        );
+
+
+      setErrors(found);
+
+
+      /* Validation failed */
+
+      if (
+        Object.keys(found)
+          .length > 0
+      ) {
+
+        showToast(
+          'Please check the highlighted fields',
+          'error'
+        );
+
+
+        const firstError =
+          Object.keys(found)[0];
+
+
+        formRef.current
+          ?.querySelector(
+            `[name="${firstError}"]`
+          )
+          ?.focus();
+
+
+        return;
+      }
+
+
+      /* Create shipping object */
+
+      const {
+        fullName,
+        email,
+        address,
+        city,
+        zip,
+        phone,
+        country,
+      } = form;
+
+
+      const shippingDetails = {
+        name: fullName,
+        email,
+        address,
+        city,
+        zip,
+        phone,
+        country,
+      };
+
+
+      /* -----------------------------------------
+         Place order in database
+         ----------------------------------------- */
+
+      setSubmitting(true);
+
+
+      try {
+
+        const order =
+          await placeOrder(
+            shippingDetails,
+            payment
+          );
+
+
+        if (order) {
+          setPlacedOrder(
+            order
+          );
+        }
+
+      } catch (error) {
+
+        console.error(
+          'Checkout error:',
+          error
+        );
+
+        showToast(
+          error.message ||
+            'Could not place order',
+          'error'
+        );
+
+      } finally {
+
+        setSubmitting(false);
+
+      }
     };
-
-
-    /* Place order */
-    const order = placeOrder(
-      shippingDetails,
-      payment
-    );
-
-
-    if (order) {
-      setPlacedOrder(order);
-    }
-  };
 
 
   /* =========================================================
      ORDER CONFIRMATION PAGE
-     Shown in place of the form once the order is placed. It is a
-     normal page section (not a fixed overlay), so the navbar and
-     footer can never cover it.
      ========================================================= */
 
   if (placedOrder) {
     return (
       <OrderConfirmation
         order={placedOrder}
-        onViewOrders={() => navigate('/orders')}
+        onViewOrders={() =>
+          navigate('/orders')
+        }
       />
     );
   }
@@ -401,15 +625,23 @@ export default function Checkout() {
       error={errors[name]}
       full={props.full}
     >
+
       <input
         id={name}
         name={name}
         value={form[name]}
-        onChange={handleChange}
-        aria-invalid={Boolean(errors[name])}
+        onChange={
+          handleChange
+        }
+        aria-invalid={
+          Boolean(
+            errors[name]
+          )
+        }
         aria-describedby={`${name}-error`}
         {...props.input}
       />
+
     </FormField>
   );
 
@@ -437,7 +669,9 @@ export default function Checkout() {
       />
 
 
-      <PageHero title="Checkout" />
+      <PageHero
+        title="Checkout"
+      />
 
 
       <section
@@ -446,6 +680,7 @@ export default function Checkout() {
           paddingTop: 20,
         }}
       >
+
         <div className="container">
 
           {cart.length === 0 ? (
@@ -469,7 +704,9 @@ export default function Checkout() {
               <form
                 id="checkoutForm"
                 ref={formRef}
-                onSubmit={handleSubmit}
+                onSubmit={
+                  handleSubmit
+                }
                 noValidate
                 aria-labelledby="shipping-title"
               >
@@ -479,8 +716,10 @@ export default function Checkout() {
                   style={{
                     fontFamily:
                       'var(--font-display)',
-                    fontSize: '1.3rem',
-                    marginBottom: 20,
+                    fontSize:
+                      '1.3rem',
+                    marginBottom:
+                      20,
                   }}
                 >
                   Shipping Details
@@ -584,23 +823,35 @@ export default function Checkout() {
                     id="country"
                     label="Country"
                   >
+
                     <select
                       id="country"
                       name="country"
-                      value={form.country}
-                      onChange={handleChange}
+                      value={
+                        form.country
+                      }
+                      onChange={
+                        handleChange
+                      }
                     >
+
                       {COUNTRIES.map(
                         (country) => (
                           <option
-                            key={country}
-                            value={country}
+                            key={
+                              country
+                            }
+                            value={
+                              country
+                            }
                           >
                             {country}
                           </option>
                         )
                       )}
+
                     </select>
+
                   </FormField>
 
                 </div>
@@ -610,7 +861,9 @@ export default function Checkout() {
                     PAYMENT
                 ================================================= */}
 
-                <fieldset className="pay-fieldset">
+                <fieldset
+                  className="pay-fieldset"
+                >
 
                   <legend>
                     Payment Method
@@ -626,9 +879,12 @@ export default function Checkout() {
                       (method) => (
 
                         <label
-                          key={method.value}
+                          key={
+                            method.value
+                          }
                           className={`pay-method ${
-                            payment === method.value
+                            payment ===
+                            method.value
                               ? 'active'
                               : ''
                           }`}
@@ -637,7 +893,9 @@ export default function Checkout() {
                           <input
                             type="radio"
                             name="payment"
-                            value={method.value}
+                            value={
+                              method.value
+                            }
                             checked={
                               payment ===
                               method.value
@@ -673,12 +931,23 @@ export default function Checkout() {
                   style={{
                     marginTop: 26,
                   }}
+                  disabled={
+                    submitting
+                  }
                 >
-                  Place Order ·{' '}
-                  {formatINR(
-                    totals.total,
-                    2
-                  )}
+
+                  {submitting
+                    ? 'Placing Order…'
+                    : (
+                      <>
+                        Place Order ·{' '}
+                        {formatINR(
+                          totals.total,
+                          2
+                        )}
+                      </>
+                    )}
+
                 </button>
 
               </form>
@@ -698,8 +967,10 @@ export default function Checkout() {
                   style={{
                     fontFamily:
                       'var(--font-display)',
-                    fontSize: '1.3rem',
-                    marginBottom: 20,
+                    fontSize:
+                      '1.3rem',
+                    marginBottom:
+                      20,
                   }}
                 >
                   Order Summary
@@ -708,50 +979,57 @@ export default function Checkout() {
 
                 <ul
                   style={{
-                    listStyle: 'none',
+                    listStyle:
+                      'none',
                   }}
                   id="checkoutSummary"
                 >
 
-                  {cart.map((item) => (
+                  {cart.map(
+                    (item) => (
 
-                    <li
-                      key={item.key}
-                      className="summary-row"
-                    >
+                      <li
+                        key={
+                          item.key
+                        }
+                        className="summary-row"
+                      >
 
-                      <span>
+                        <span>
 
-                        {item.name}
+                          {item.name}
 
-                        {item.options?.size
-                          ? ` (${item.options.size})`
-                          : ''}
+                          {item.options?.size
+                            ? ` (${item.options.size})`
+                            : ''}
 
-                        {' × '}
+                          {' × '}
 
-                        {item.qty}
+                          {item.qty}
 
-                      </span>
+                        </span>
 
 
-                      <span>
-                        {formatINR(
-                          item.price *
-                            item.qty,
-                          2
-                        )}
-                      </span>
+                        <span>
+                          {formatINR(
+                            item.price *
+                              item.qty,
+                            2
+                          )}
+                        </span>
 
-                    </li>
+                      </li>
 
-                  ))}
+                    )
+                  )}
 
                 </ul>
 
 
                 <SummaryRows
-                  totals={totals}
+                  totals={
+                    totals
+                  }
                 />
 
               </aside>
@@ -760,6 +1038,7 @@ export default function Checkout() {
           )}
 
         </div>
+
       </section>
     </>
   );
